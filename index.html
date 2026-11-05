@@ -1,863 +1,1233 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SlangSnap · US Internet Slang Dictionary</title>
-<style>
-  :root {
-    --bg: #f6f7fb;
-    --card: #ffffff;
-    --ink: #1c2333;
-    --muted: #6b7280;
-    --accent: #4f6ef7;
-    --accent-soft: #eef1ff;
-    --hot: #ff5a5f;
-    --hot-soft: #ffecec;
-    --warm: #ff9f43;
-    --warm-soft: #fff4e5;
-    --green: #2fb380;
-    --green-soft: #e6f7f0;
-    --purple: #8b5cf6;
-    --border: #e7e9f0;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-  }
-  header {
-    text-align: center;
-    padding: 48px 20px 28px;
-    position: relative;
-  }
-  .lang-toggle {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    color: var(--ink);
-    font-size: 13.5px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  header h1 {
-    font-size: 34px;
-    letter-spacing: 1px;
-  }
-  header h1 span { color: var(--accent); }
-  header p.sub {
-    margin-top: 10px;
-    color: var(--muted);
-    font-size: 15px;
-  }
-  .stats {
-    margin-top: 14px;
-    display: inline-flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .stat-chip {
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 5px 14px;
-    border-radius: 999px;
-  }
-  .search-wrap {
-    max-width: 680px;
-    margin: 22px auto 0;
-    padding: 0 20px;
-  }
-  .search-box {
-    display: flex;
-    background: var(--card);
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    transition: border-color .2s;
-  }
-  .search-box:focus-within { border-color: var(--accent); }
-  .search-box input {
-    flex: 1;
-    border: none;
-    outline: none;
-    padding: 15px 18px;
-    font-size: 16px;
-    background: transparent;
-    color: var(--ink);
-  }
-  .search-box button {
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    padding: 0 26px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .search-box button.random {
-    background: var(--card);
-    color: var(--accent);
-    border-left: 2px solid var(--border);
-  }
-  .search-box button.random:hover { background: var(--accent-soft); }
-  .cats {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 26px auto 8px;
-    padding: 0 20px;
-  }
-  .cat-btn {
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    color: var(--ink);
-    padding: 8px 18px;
-    border-radius: 999px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .cat-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .cat-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 600;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 18px;
-    max-width: 1160px;
-    margin: 24px auto 60px;
-    padding: 0 20px;
-  }
-  .card {
-    background: var(--card);
-    border: 1.5px solid var(--border);
-    border-radius: 18px;
-    padding: 22px;
-    cursor: pointer;
-    transition: transform .15s, box-shadow .15s, border-color .15s;
-    position: relative;
-    overflow: hidden;
-  }
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(31, 42, 80, .10);
-    border-color: var(--accent);
-  }
-  .card .emoji {
-    font-size: 34px;
-    line-height: 1;
-    margin-bottom: 10px;
-  }
-  .card h3 {
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .card h3 .pron {
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 400;
-  }
-  .badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 999px;
-    margin-left: auto;
-  }
-  .badge.hot { background: var(--hot-soft); color: var(--hot); }
-  .badge.rising { background: var(--warm-soft); color: var(--warm); }
-  .badge.classic { background: var(--green-soft); color: var(--green); }
-  .badge.brainrot { background: #f3e8ff; color: var(--purple); }
-  .card .zh {
-    margin-top: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--accent);
-  }
-  .card .en {
-    margin-top: 6px;
-    font-size: 13.5px;
-    color: var(--muted);
-    line-height: 1.55;
-  }
-  .card .cat-tag {
-    margin-top: 12px;
-    display: inline-block;
-    font-size: 12px;
-    color: var(--muted);
-    background: var(--bg);
-    padding: 3px 10px;
-    border-radius: 8px;
-  }
-  .empty {
-    grid-column: 1 / -1;
-    text-align: center;
-    color: var(--muted);
-    padding: 60px 0;
-    font-size: 16px;
-  }
-  /* modal */
-  .modal-mask {
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 25, 45, .45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    z-index: 50;
-  }
-  .modal-mask.open { display: flex; }
-  .modal {
-    background: var(--card);
-    border-radius: 22px;
-    max-width: 560px;
-    width: 100%;
-    max-height: 85vh;
-    overflow-y: auto;
-    padding: 32px;
-    position: relative;
-    animation: pop .22s ease;
-  }
-  @keyframes pop {
-    from { transform: scale(.92); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-  .modal .close {
-    position: absolute;
-    top: 16px;
-    right: 20px;
-    border: none;
-    background: var(--bg);
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    font-size: 17px;
-    cursor: pointer;
-    color: var(--muted);
-  }
-  .modal .close:hover { background: var(--hot-soft); color: var(--hot); }
-  .modal .m-emoji { font-size: 44px; }
-  .modal h2 {
-    margin-top: 10px;
-    font-size: 30px;
-  }
-  .modal .m-pron { color: var(--muted); font-size: 15px; margin-top: 4px; }
-  .modal .section { margin-top: 20px; }
-  .modal .section h4 {
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--accent);
-    margin-bottom: 7px;
-  }
-  .modal .section p {
-    font-size: 15.5px;
-    line-height: 1.75;
-  }
-  .modal .example {
-    background: var(--accent-soft);
-    border-radius: 12px;
-    padding: 14px 16px;
-    font-style: italic;
-    line-height: 1.7;
-  }
-  .modal .example .tr { font-style: normal; color: var(--muted); font-size: 13.5px; display: block; margin-top: 5px; }
-  .modal .origin {
-    background: var(--warm-soft);
-    border-radius: 12px;
-    padding: 14px 16px;
-    font-size: 14.5px;
-    line-height: 1.7;
-  }
-  .modal .m-badges { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  footer {
-    text-align: center;
-    padding: 26px;
-    color: var(--muted);
-    font-size: 13px;
-    border-top: 1px solid var(--border);
-  }
-  @media (max-width: 560px) {
-    header h1 { font-size: 26px; }
-    .grid { grid-template-columns: 1fr; }
-  }
-</style>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SlangSnap · US Internet Slang Dictionary</title>
+    <meta
+      name="description"
+      content="A zero-dependency, single-file web app that collects trending US internet slang, with bilingual (EN/中文) explanations, examples, and origin stories."
+    />
+    <meta name="keywords" content="rizz、skibidi、habibi、cooked" />
+    <meta name="baidu-site-verification" content="codeva-qP9xzROs34" />
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8335716084958178"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --card: #ffffff;
+        --ink: #1c2333;
+        --muted: #6b7280;
+        --accent: #4f6ef7;
+        --accent-soft: #eef1ff;
+        --hot: #ff5a5f;
+        --hot-soft: #ffecec;
+        --warm: #ff9f43;
+        --warm-soft: #fff4e5;
+        --green: #2fb380;
+        --green-soft: #e6f7f0;
+        --purple: #8b5cf6;
+        --border: #e7e9f0;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+      }
+      header {
+        text-align: center;
+        padding: 48px 20px 28px;
+        position: relative;
+      }
+      .lang-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        border: 1.5px solid var(--border);
+        background: var(--card);
+        color: var(--ink);
+        font-size: 13.5px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .lang-toggle:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      header h1 {
+        font-size: 34px;
+        letter-spacing: 1px;
+      }
+      header h1 span {
+        color: var(--accent);
+      }
+      header p.sub {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .stats {
+        margin-top: 14px;
+        display: inline-flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .stat-chip {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 5px 14px;
+        border-radius: 999px;
+      }
+      .search-wrap {
+        max-width: 680px;
+        margin: 22px auto 0;
+        padding: 0 20px;
+      }
+      .search-box {
+        display: flex;
+        background: var(--card);
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+      .search-box:focus-within {
+        border-color: var(--accent);
+      }
+      .search-box input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 15px 18px;
+        font-size: 16px;
+        background: transparent;
+        color: var(--ink);
+      }
+      .search-box button {
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        padding: 0 26px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .search-box button.random {
+        background: var(--card);
+        color: var(--accent);
+        border-left: 2px solid var(--border);
+      }
+      .search-box button.random:hover {
+        background: var(--accent-soft);
+      }
+      .cats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 26px auto 8px;
+        padding: 0 20px;
+      }
+      .cat-btn {
+        border: 1.5px solid var(--border);
+        background: var(--card);
+        color: var(--ink);
+        padding: 8px 18px;
+        border-radius: 999px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .cat-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .cat-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        font-weight: 600;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 18px;
+        max-width: 1160px;
+        margin: 24px auto 60px;
+        padding: 0 20px;
+      }
+      .card {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 18px;
+        padding: 22px;
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s,
+          border-color 0.15s;
+        position: relative;
+        overflow: hidden;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(31, 42, 80, 0.1);
+        border-color: var(--accent);
+      }
+      .card .emoji {
+        font-size: 34px;
+        line-height: 1;
+        margin-bottom: 10px;
+      }
+      .card h3 {
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .card h3 .pron {
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        margin-left: auto;
+      }
+      .badge.hot {
+        background: var(--hot-soft);
+        color: var(--hot);
+      }
+      .badge.rising {
+        background: var(--warm-soft);
+        color: var(--warm);
+      }
+      .badge.classic {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+      .badge.brainrot {
+        background: #f3e8ff;
+        color: var(--purple);
+      }
+      .card .zh {
+        margin-top: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .card .en {
+        margin-top: 6px;
+        font-size: 13.5px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .card .cat-tag {
+        margin-top: 12px;
+        display: inline-block;
+        font-size: 12px;
+        color: var(--muted);
+        background: var(--bg);
+        padding: 3px 10px;
+        border-radius: 8px;
+      }
+      .empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: var(--muted);
+        padding: 60px 0;
+        font-size: 16px;
+      }
+      /* modal */
+      .modal-mask {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 25, 45, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 50;
+      }
+      .modal-mask.open {
+        display: flex;
+      }
+      .modal {
+        background: var(--card);
+        border-radius: 22px;
+        max-width: 560px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 32px;
+        position: relative;
+        animation: pop 0.22s ease;
+      }
+      @keyframes pop {
+        from {
+          transform: scale(0.92);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .modal .close {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        border: none;
+        background: var(--bg);
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        font-size: 17px;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .modal .close:hover {
+        background: var(--hot-soft);
+        color: var(--hot);
+      }
+      .modal .m-emoji {
+        font-size: 44px;
+      }
+      .modal h2 {
+        margin-top: 10px;
+        font-size: 30px;
+      }
+      .modal .m-pron {
+        color: var(--muted);
+        font-size: 15px;
+        margin-top: 4px;
+      }
+      .modal .section {
+        margin-top: 20px;
+      }
+      .modal .section h4 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--accent);
+        margin-bottom: 7px;
+      }
+      .modal .section p {
+        font-size: 15.5px;
+        line-height: 1.75;
+      }
+      .modal .example {
+        background: var(--accent-soft);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-style: italic;
+        line-height: 1.7;
+      }
+      .modal .example .tr {
+        font-style: normal;
+        color: var(--muted);
+        font-size: 13.5px;
+        display: block;
+        margin-top: 5px;
+      }
+      .modal .origin {
+        background: var(--warm-soft);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 14.5px;
+        line-height: 1.7;
+      }
+      .modal .m-badges {
+        margin-top: 14px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      footer {
+        text-align: center;
+        padding: 26px;
+        color: var(--muted);
+        font-size: 13px;
+        border-top: 1px solid var(--border);
+      }
+      @media (max-width: 560px) {
+        header h1 {
+          font-size: 26px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button class="lang-toggle" id="langToggle">中文</button>
+      <h1 id="siteTitle">🔥 Slang<span>Snap</span></h1>
+      <p class="sub" id="siteSub">
+        The fun dictionary of US internet slang — know exactly what they're
+        saying online
+      </p>
+      <div class="stats" id="statsBar"></div>
+      <div class="search-wrap">
+        <div class="search-box">
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search slang, e.g. rizz / habibi / skibidi..."
+          />
+          <button class="random" id="randomBtn" title="Surprise me">
+            🎲 Random
+          </button>
+          <button id="searchBtn">Search</button>
+        </div>
+      </div>
+      <div class="cats" id="catBar"></div>
+    </header>
 
-<header>
-  <button class="lang-toggle" id="langToggle">中文</button>
-  <h1 id="siteTitle">🔥 Slang<span>Snap</span></h1>
-  <p class="sub" id="siteSub">The fun dictionary of US internet slang — know exactly what they're saying online</p>
-  <div class="stats" id="statsBar"></div>
-  <div class="search-wrap">
-    <div class="search-box">
-      <input id="searchInput" type="text" placeholder="Search slang, e.g. rizz / habibi / skibidi...">
-      <button class="random" id="randomBtn" title="Surprise me">🎲 Random</button>
-      <button id="searchBtn">Search</button>
+    <main class="grid" id="grid"></main>
+
+    <footer id="footerBar">
+      New slang added regularly · For fun & learning only · Made with ❤️ by
+      g-uno
+    </footer>
+
+    <div class="modal-mask" id="mask">
+      <div class="modal" id="modal"></div>
     </div>
-  </div>
-  <div class="cats" id="catBar"></div>
-</header>
 
-<main class="grid" id="grid"></main>
+    <script>
+      const WORDS = [
+        {
+          term: "habibi",
+          emoji: "❤️",
+          pron: "/həˈbiːbi/ 哈比比",
+          cat: "trending",
+          heat: "hot",
+          trend: "↑1,000%",
+          zh: "亲爱的、老铁（阿拉伯语借词）",
+          en: 'Arabic for "my darling / my buddy". Recently exploded on the US internet as a friendly way to call someone your close pal — like bro or bestie, with extra warmth.',
+          example: "What's up habibi! Long time no see!",
+          tr: "咋样啊老铁！好久不见！",
+          origin:
+            "源自阿拉伯语 حبيبي（我的爱人）。2026年因短视频热梗和体育圈主播带火，Google 搜索量一周暴涨 10 倍。",
+        },
+        {
+          term: "skibidi",
+          emoji: "🚽",
+          pron: "/ˈskɪbɪdi/ 斯基比迪",
+          cat: "brainrot",
+          heat: "brainrot",
+          trend: "Gen Alpha favorite",
+          zh: "无实际含义的「脑腐」咒语词",
+          en: 'A nonsense word from the viral YouTube series "Skibidi Toilet". Used by Gen Alpha for anything absurd, cool, or just as pure brainrot filler. Often combined: "skibidi rizz".',
+          example: "Bro really said skibidi and ran away 💀",
+          tr: "兄弟喊了句 skibidi 就跑了，绷不住",
+          origin:
+            "出自 2023 年爆火的 YouTube 动画《Skibidi Toilet》（马桶人大战监控人），成为 Alpha 世代（10后）的标志性暗号。",
+        },
+        {
+          term: "rizz",
+          emoji: "😏",
+          pron: "/rɪz/ 里兹",
+          cat: "trending",
+          heat: "hot",
+          trend: "Word of the Year 2023",
+          zh: "撩人技巧、个人魅力",
+          en: 'Charisma, especially the skill of charming a romantic interest. Can be a noun ("he\'s got rizz") or a verb with "up" ("he rizzed her up").',
+          example: "Bro has unlimited rizz, how does he do it??",
+          tr: "这哥们魅力值拉满，他咋做到的？？",
+          origin:
+            "由 Kai Cenat 等主播带火，是 charisma（魅力）中间部分的缩写。2023 年被牛津词典评为年度词汇。",
+        },
+        {
+          term: "gyatt",
+          emoji: "😳",
+          pron: "/ɡjæt/ 加特",
+          cat: "brainrot",
+          heat: "brainrot",
+          trend: "Twitch regular",
+          zh: "惊叹某人体型/身材爆炸",
+          en: 'An exclamation (from "god damn") used when someone sees a person with a curvy figure. Extremely common on Twitch and TikTok live chats.',
+          example: "GYATT DAMN did you see that??",
+          tr: "我的天呐你看到没？？",
+          origin:
+            '源自 streamer 对 "god damn" 的快速连读，被 YourRAGE 等主播推广，现已成脑腐词库核心成员。',
+        },
+        {
+          term: "sigma",
+          emoji: "🐺",
+          pron: "/ˈsɪɡmə/ 西格玛",
+          cat: "meme",
+          heat: "rising",
+          trend: "Sigma era continues",
+          zh: "独来独往的高冷强者",
+          en: 'A lone-wolf alpha. Someone cool, independent, and successful who doesn\'t need social validation. Often ironic in "sigma male grindset" memes.',
+          example: "He's such a sigma, doesn't even text anyone back.",
+          tr: "他就是个 sigma，谁的微信都不回。",
+          origin:
+            '在"Alpha/Beta 男"等级理论中硬造出的更高等级，经《American Psycho》Patrick Bateman 二创梗图封神。',
+        },
+        {
+          term: "delulu",
+          emoji: "🌈",
+          pron: "/dɪˈluːluː/ 德噜噜",
+          cat: "trending",
+          heat: "rising",
+          trend: "Stan-culture must",
+          zh: "自欺欺人式乐观，妄想粉丝",
+          en: 'Short for "delusional". Being playfully unrealistic about your crush or dreams. "Delulu is the solulu" = being delusional is the solution.',
+          example: "I'm delulu but I truly think he likes me back.",
+          tr: "我知道我在做梦，但我真觉得他也喜欢我。",
+          origin:
+            "来自 K-pop 粉丝圈对 delusional 的萌化缩写，2024 年破圈成为 TikTok 高频词。",
+        },
+        {
+          term: "fanum tax",
+          emoji: "🍟",
+          pron: "法纳姆税",
+          cat: "brainrot",
+          heat: "hot",
+          trend: "↕ Steady",
+          zh: "「好友抢食税」",
+          en: "When your friend steals your food. Named after streamer Fanum, who constantly took bites of Kai Cenat's food on stream.",
+          example: "Bro paid the fanum tax on my fries again 💀",
+          tr: "兄弟又对我的薯条征了抢食税",
+          origin:
+            "出自 Kai Cenat 的 AMP 直播团成员 Fanum，2023 年随直播切片疯传，还衍生出洗脑神曲。",
+        },
+        {
+          term: "Ohio",
+          emoji: "🌾",
+          pron: "俄亥俄",
+          cat: "meme",
+          heat: "classic",
+          trend: "Evergreen",
+          zh: "离谱、诡异、不对劲的代名词",
+          en: 'Used to describe anything weird, cursed, or absurd — as if only Ohio could produce it. "Only in Ohio" became a global meme format.',
+          example: "This school cafeteria is so Ohio 💀",
+          tr: "我们食堂太离谱了（太 Ohio 了）",
+          origin:
+            '2022 年起 TikTok 上"俄亥俄 = 怪事发生地"的梗席卷全网，成为形容一切邪门事物的万能词。',
+        },
+        {
+          term: "aura",
+          emoji: "✨",
+          pron: "奥拉",
+          cat: "trending",
+          heat: "hot",
+          trend: "Aura-scoring trend",
+          zh: "气场分、魅力值",
+          en: "Imaginary coolness points. Doing something smooth earns aura; doing something embarrassing loses massive aura (-1000).",
+          example: "He tripped on stage. That's -1000 aura.",
+          tr: "他在台上摔了一跤，气场分扣一千。",
+          origin:
+            '2024 年从篮球圈解说（评价球员气质）扩散成全网通用的"魅力记分梗"。',
+        },
+        {
+          term: "mewing",
+          emoji: "🤐",
+          pron: "缪英",
+          cat: "trending",
+          heat: "rising",
+          trend: "Looksmaxxing staple",
+          zh: "一种「闭嘴舌头贴上颚」的瘦脸法",
+          en: "A tongue-posture technique supposedly defining your jawline. Became a meme where you point at your jaw and can't talk because you're \"mewing\".",
+          example: "Shhh, can't talk. I'm mewing.",
+          tr: "嘘，别吵，我在 mewing 呢。",
+          origin:
+            "以英国正畸医生 Mike Mew 命名，2023 年被 TikTok looksmaxxing 颜值圈发扬光大。",
+        },
+        {
+          term: "looksmaxxing",
+          emoji: "💪",
+          pron: "颜值最大化",
+          cat: "trending",
+          heat: "rising",
+          trend: "Heating up",
+          zh: "颜值极限提升运动",
+          en: 'The practice of maximizing your looks — gym, skincare, haircut, even extreme methods. Sub-types include "softmaxxing" (natural) and "hardmaxxing" (intense).',
+          example: "Bro started looksmaxxing and disappeared for 6 months.",
+          tr: "兄弟开始颜值修炼，闭关六个月没见人。",
+          origin:
+            '起源于颜值论坛，2024 年因 TikTok 的 "Looksmaxxing" 变装视频走向主流。',
+        },
+        {
+          term: "no cap",
+          emoji: "🧢",
+          pron: "不戴帽",
+          cat: "classic",
+          heat: "classic",
+          trend: "常青树",
+          zh: "不骗你、我说真的",
+          en: 'No lie, for real. "Cap" means lie, so "no cap" swears you\'re telling the truth. Comes from hip-hop slang.',
+          example: "This is the best pizza in NY, no cap.",
+          tr: "这是纽约最好吃的披萨，不骗你。",
+          origin:
+            '"Cap" 在黑人俚语里意为撒谎（源自 "capping"），说唱文化推广后成为全球通用口头禅。',
+        },
+        {
+          term: "fr fr",
+          emoji: "💯",
+          pron: "for real for real",
+          cat: "classic",
+          heat: "classic",
+          trend: "Typing staple",
+          zh: "真的真的、说正经的",
+          en: '"For real, for real" — emphasizing you mean it. Often used at the end of sentences for dramatic agreement.',
+          example: "This semester is killing me fr fr",
+          tr: "这学期真要了我的命，真的真的。",
+          origin:
+            "短信时代的缩写文化产物，在 Twitter/X 和 Discord 上永不过时。",
+        },
+        {
+          term: "bussin",
+          emoji: "🍔",
+          pron: "巴辛",
+          cat: "classic",
+          heat: "classic",
+          trend: "Food-review pick",
+          zh: "好吃到爆",
+          en: 'Extremely good, usually about food. From "busting" (as in flavor bursting out).',
+          example: "Grandma's cooking? Absolutely bussin.",
+          tr: "奶奶做的饭？那叫一个香到爆。",
+          origin: "出自非裔美式英语（AAVE），经 TikTok 美食博主测评视频普及。",
+        },
+        {
+          term: "cooked",
+          emoji: "🍳",
+          pron: "熟了",
+          cat: "classic",
+          heat: "rising",
+          trend: "Still expanding",
+          zh: "完蛋了、废了",
+          en: "Done for, exhausted, or doomed. If you're cooked, there's no saving you — like a piece of meat that's already done.",
+          example: "I have 3 finals tomorrow. I'm cooked.",
+          tr: "明天三门期末考，我熟透了。",
+          origin:
+            '体育解说（"the defense is cooked"）+ 学生考试圈的推波助澜，2024-2026 持续霸榜。',
+        },
+        {
+          term: "mid",
+          emoji: "😐",
+          pron: "中等",
+          cat: "classic",
+          heat: "classic",
+          trend: "The ultimate meh",
+          zh: "平庸、就那样、不好不坏",
+          en: "Mediocre, underwhelming. The ultimate dismissive review — not bad enough to hate, not good enough to praise.",
+          example: "Everyone loves that movie but honestly it's mid.",
+          tr: "大家都吹那部电影，讲真也就一般。",
+          origin:
+            '从 "mid-tier" 缩写而来，本是游戏圈用语，后成为全网万能差评。',
+        },
+        {
+          term: "glazing",
+          emoji: "🍩",
+          pron: "镀糖衣",
+          cat: "trending",
+          heat: "hot",
+          trend: "Comment-section hot",
+          zh: "无脑吹、舔狗式捧人",
+          en: "Excessively praising or flattering someone, like a donut drowning in glaze. The modern word for being a suck-up.",
+          example: "Stop glazing him, he scored one lucky goal.",
+          tr: "别舔了，他就进了一个运气球。",
+          origin:
+            "2023 年从 Twitch 评论区爆发，打篮球/游戏区最常用来嘲讽过度吹捧。",
+        },
+        {
+          term: "huzz",
+          emoji: "🫣",
+          pron: "哈兹",
+          cat: "brainrot",
+          heat: "rising",
+          trend: "Gen Z favorite",
+          zh: "女生们（hoes 的萌化说法）",
+          en: 'A playful, meme-y way to refer to girls, from "hoes". Male counterpart: "bruzz". Often used ironically.',
+          example: "The huzz are not gonna like this one.",
+          tr: "这一波妹子们可不乐意了。",
+          origin:
+            "2024 年 Twitch/Kick 主播圈流行起来的谐音梗，属于典型的脑腐进化产物。",
+        },
+        {
+          term: "chill guy",
+          emoji: "🐕",
+          pron: "淡定狗",
+          cat: "meme",
+          heat: "hot",
+          trend: "↓ Cooling, still iconic",
+          zh: "佛系淡人、无所谓先生",
+          en: 'From the "my chill guy" meme — a cartoon dog in a sweater who is "just a chill guy". Describes someone unbothered by anything.',
+          example: "I missed the deadline but I'm just a chill guy.",
+          tr: "虽然错过截止日期，但我是条淡定狗。",
+          origin:
+            '插画师 Phillip Banks 的原创角色，2024 年底病毒式传播，成为"摆烂但淡定"的精神图腾。',
+        },
+        {
+          term: "very demure, very mindful",
+          emoji: "🙏",
+          pron: "端庄又清醒",
+          cat: "meme",
+          heat: "classic",
+          trend: "2024 Meme of the Year",
+          zh: "「很端庄、很走心」（反讽式谦虚）",
+          en: 'From Jools Lebron\'s viral TikToks about being modest and respectful at work. Used ironically to describe anything done "properly".',
+          example: "I do my nails very demure, very mindful.",
+          tr: "我做美甲很端庄、很克制。",
+          origin:
+            "2024 年 8 月由变装创作者 Jools Lebron 创造，一夜之间霸榜 TikTok。",
+        },
+        {
+          term: "slay",
+          emoji: "💅",
+          pron: "斯雷",
+          cat: "classic",
+          heat: "classic",
+          trend: "常青",
+          zh: "绝了、杀疯了",
+          en: "You did amazing, you ate that. Originally ballroom culture, now a universal compliment (mostly used by/for women).",
+          example: "You wore THAT to the party? Slay.",
+          tr: "你穿这身去派对？杀疯了。",
+          origin:
+            "源自 1980s LGBTQ+ 舞厅文化，经 RuPaul 变装皇后秀传播至全网。",
+        },
+        {
+          term: "sus",
+          emoji: "🤨",
+          pron: "萨丝",
+          cat: "classic",
+          heat: "classic",
+          trend: "Gaming evergreen",
+          zh: "可疑的",
+          en: 'Short for "suspicious". Popularized by the game Among Us where you vote out the sus crewmate.',
+          example: "Why were you near the body? Kinda sus.",
+          tr: "你为啥在尸体旁边？有点可疑。",
+          origin:
+            "Among Us（太空狼人杀）2020 年翻红带火，如今仍是怀疑一切的万能词。",
+        },
+        {
+          term: "ratio",
+          emoji: "📊",
+          pron: "瑞修",
+          cat: "classic",
+          heat: "classic",
+          trend: "Twitter classic",
+          zh: "点赞碾压式打脸",
+          en: 'When a reply gets more likes than the original post, proving the original was bad. Commenting "ratio" is challenging others to out-like the post.',
+          example: "Ratio + L + didn't ask",
+          tr: "点踩 + 你输了 + 没人问你",
+          origin:
+            'Twitter/X 文化产物，一条回复的赞数超过原帖即宣告"舆论处刑"成功。',
+        },
+        {
+          term: "touch grass",
+          emoji: "🌱",
+          pron: "去摸草",
+          cat: "classic",
+          heat: "classic",
+          trend: "Go-outside classic",
+          zh: "出去走走吧、别在网上泡了",
+          en: "Go outside and reconnect with reality. Told to people who are extremely online, arguing about nonsense.",
+          example: "You made 50 comments about this? Touch grass.",
+          tr: "你为这事发了50条评论？去摸摸草吧。",
+          origin:
+            '游戏圈劝架用语，讽刺重度网瘾者"你已经很久没见过真实世界了"。',
+        },
+        {
+          term: "brainrot",
+          emoji: "🧠",
+          pron: "脑腐",
+          cat: "brainrot",
+          heat: "hot",
+          trend: "Word of the Year 2024",
+          zh: "脑腐（网络烂梗吃多了）",
+          en: "Both the content that melts your brain AND the state of your brain after too much of it. Oxford's 2024 Word of the Year.",
+          example: "I can't stop saying skibidi. I have brainrot.",
+          tr: "我忍不住一直说 skibidi，脑子已经腐烂了。",
+          origin:
+            "2024 年牛津年度词汇，专指 skibidi / gyatt / fanum tax 一类让大脑退化的病毒式内容。",
+        },
+        {
+          term: "lore",
+          emoji: "📜",
+          pron: "罗尔",
+          cat: "trending",
+          heat: "rising",
+          trend: "Backstory trend",
+          zh: "背景故事、黑历史设定",
+          en: "Someone's backstory or history, treated like video game lore. \"That's crazy lore\" = wild backstory revealed.",
+          example: "Wait, you dated HER ex? That's crazy lore.",
+          tr: "等等，你谈过她的前任？这瓜的信息量很大。",
+          origin:
+            '游戏/影视圈"世界观设定"一词的挪用，TikTok 用户把个人往事也当剧情讲。',
+        },
+        {
+          term: "ate",
+          emoji: "🍽️",
+          pron: "吃干净了",
+          cat: "classic",
+          heat: "classic",
+          trend: "Compliment staple",
+          zh: "表现炸裂、碾压全场",
+          en: 'She ate = she performed flawlessly. Usually followed by "and left no crumbs" (毫无破绽).',
+          example: "Her Met Gala look ate and left no crumbs.",
+          tr: "她的 Met Gala 造型赢麻了，一点破绽没有。",
+          origin:
+            '出自 Ballroom 文化 "ate that"，与 slay 同源，现活跃于时尚、舞台评论区。',
+        },
+        {
+          term: "NPC",
+          emoji: "🤖",
+          pron: "恩皮西",
+          cat: "meme",
+          heat: "classic",
+          trend: "Philosophical",
+          zh: "工具人、没有主见的人",
+          en: "Non-player character. Someone who repeats scripted opinions, walks in herds, lacks independent thought — like a video game background character.",
+          example: "Bro just repeats TikTok takes, total NPC behavior.",
+          tr: "兄弟只会复读 TikTok 观点，纯纯 NPC 行为。",
+          origin:
+            "游戏术语挪用，2022 年起用于嘲讽人云亦云的人，也衍生出 NPC 直播乱象。",
+        },
+        {
+          term: "ghosting",
+          emoji: "👻",
+          pron: "鬼隐",
+          cat: "life",
+          heat: "classic",
+          trend: "Dating-talk staple",
+          zh: "玩消失、已读不回人间蒸发",
+          en: "Suddenly cutting off all contact with someone without explanation — common in dating and even friendships.",
+          example: "We had 3 great dates, then he started ghosting me.",
+          tr: "我们约会三次很愉快，然后他开始人间蒸发。",
+          origin:
+            '2010s 约会软件时代词汇，ghost 形象地描述"人像幽灵一样消失"。',
+        },
+        {
+          term: "situationship",
+          emoji: "💞",
+          pron: "西图诶逊ship",
+          cat: "life",
+          heat: "classic",
+          trend: "Dating-talk staple",
+          zh: "说不清道不明的暧昧关系",
+          en: "A romantic relationship without a definition — more than friends, less than partners, and nobody's asking for clarity.",
+          example: "We've been in a situationship for 2 years.",
+          tr: "我们已经暧昧了两年，谁也没捅破。",
+          origin:
+            'Tinder 时代产物：relationship 前加 situation，精准命名"关系不确定态"。',
+        },
+        {
+          term: "yeet",
+          emoji: "🚀",
+          pron: "耶特",
+          cat: "meme",
+          heat: "classic",
+          trend: "Forever kinetic",
+          zh: "用力扔出去",
+          en: "To throw something with full force and zero regard. Also an exclamation of excitement while doing so.",
+          example: "He yeeted the phone into the lake.",
+          tr: "他一扬手把手机扔湖里了。",
+          origin: '2014 年 Vine 舞蹈视频诞生，因"投掷的爽感"成为永恒动词。',
+        },
+        {
+          term: "main character",
+          emoji: "🎬",
+          pron: "主角光环",
+          cat: "life",
+          heat: "classic",
+          trend: "Main-character vibe",
+          zh: "活出主角感",
+          en: "Living like you're the protagonist of your own movie — confidently, unapologetically, sometimes obnoxiously.",
+          example: "She danced in the rain like a main character.",
+          tr: "她在雨中起舞，主角光环拉满。",
+          origin:
+            'TikTok 的 "main character energy" 浪潮，鼓励人人活出自己的剧本。',
+        },
+        {
+          term: "POV",
+          emoji: "🎥",
+          pron: "第一视角",
+          cat: "classic",
+          heat: "classic",
+          trend: "Short-video king",
+          en: "Point of view. On TikTok it labels a scenario from a specific angle — though half the time it's used incorrectly.",
+          example: "POV: you're the last one to get the meme",
+          tr: "第一视角：你是最后一个看懂这个梗的",
+          origin:
+            "电影术语（主观镜头），被短视频格式化后成为叙事框架万能前缀。",
+        },
+        {
+          term: "based",
+          emoji: "🗿",
+          pron: "贝斯德",
+          cat: "classic",
+          heat: "classic",
+          trend: "Forum relic",
+          zh: "真实敢说、活该被赞",
+          en: "Unapologetically yourself, stating your opinion without caring what others think. High praise in comment sections.",
+          example: "He said pizza with pineapple is fine. Based.",
+          tr: "他敢说菠萝披萨没问题。有胆量，赞。",
+          origin:
+            '说唱歌手 Lil B 把本带贬义的 "basehead" 反转为褒义，后成 Reddit 评论区最高敬意。',
+        },
+        {
+          term: "goated",
+          emoji: "🐐",
+          pron: "GOAT 化",
+          cat: "classic",
+          heat: "classic",
+          trend: "Sports-cast hot",
+          zh: "史上最佳级的",
+          en: "From GOAT (Greatest Of All Time). Describing anything legendary or peak performance.",
+          example: "That free sauce policy is goated.",
+          tr: "免费加酱这个政策简直是神来之笔。",
+          origin:
+            "GOAT 本用于体育巨星（乔丹、梅西），衍生形容词后万物皆可 goated。",
+        },
+        {
+          term: "it's giving...",
+          emoji: "🎭",
+          pron: "这给人的感觉是…",
+          cat: "trending",
+          heat: "rising",
+          trend: "Vibe-check king",
+          zh: "「这很…」「一股…味儿」",
+          en: 'A sentence frame for describing vibes: "it\'s giving 2007" = it feels like 2007. Born in ballroom culture, perfected by TikTok.',
+          example: "That outfit? It's giving elementary school art teacher.",
+          tr: "这身穿搭？一股小学美术老师味儿。",
+          origin:
+            'Ballroom 语法（"it\'s giving face"）经黑人说唱与 TikTok 时尚区推广成为万能点评句。',
+        },
+        {
+          term: "lowkey / highkey",
+          emoji: "🤫",
+          pron: "楼key / 嗨key",
+          cat: "classic",
+          heat: "classic",
+          trend: "Degree-adverb duo",
+          zh: "低调地说 / 高调地说（暗戳戳 / 明晃晃）",
+          en: "Lowkey = slightly, secretly. Highkey = openly, extremely. Perfect for grading your enthusiasm.",
+          example: "I lowkey want to quit and become a farmer.",
+          tr: "我暗戳戳想辞职去当农民。",
+          origin:
+            "音乐圈俚语（lowkey 指不张扬的 parties），后泛化为一对万能程度副词。",
+        },
+        {
+          term: "deadass",
+          emoji: "🗿",
+          pron: "呆达斯",
+          cat: "classic",
+          heat: "classic",
+          trend: "NYC specialty",
+          zh: "说真的、不骗你（纽约认证）",
+          en: 'New York slang for "seriously / for real". Adding it to any sentence instantly adds NY accent energy.',
+          example: "Deadass the best bagel I've ever had.",
+          tr: "说真的，这是我吃过最好的贝果。",
+          origin: "纽约市土产俚语，从街头走向说唱歌词再到全网。",
+        },
+        {
+          term: "IYKYK",
+          emoji: "🤝",
+          pron: "if you know you know",
+          cat: "classic",
+          heat: "classic",
+          trend: "Insider code",
+          zh: "懂的都懂",
+          en: '"If you know, you know." A wink at insider knowledge — no explanation needed for those in the circle.',
+          example: "That 3am diner run was special. IYKYK.",
+          tr: "凌晨三点那顿路边摊太绝了，懂的都懂。",
+          origin: "短信缩写时代遗产，自带圈层优越感的社交暗号。",
+        },
+        {
+          term: "canon event",
+          emoji: "🕸️",
+          pron: "正史事件",
+          cat: "meme",
+          heat: "classic",
+          trend: "Fate-meme trend",
+          zh: '人生必经的"正史剧情"',
+          en: "From Spider-Verse: an unavoidable, defining life event that shapes who you are. Often embarrassing or painful.",
+          example: "Getting friendzoned in high school is a canon event.",
+          tr: "高中被发好人卡是人生正史剧情。",
+          origin:
+            "2023 年《蜘蛛侠：纵横宇宙》带火的概念，网友用来自嘲人生必经的丢脸时刻。",
+        },
+      ];
 
-<footer id="footerBar">New slang added regularly · For fun & learning only · Made with ❤️ by g-uno</footer>
+      const CATS = [
+        { id: "all", icon: "🗂️", label: { en: "All", cn: "全部" } },
+        {
+          id: "trending",
+          icon: "🔥",
+          label: { en: "Trending", cn: "当红热词" },
+        },
+        {
+          id: "brainrot",
+          icon: "🧠",
+          label: { en: "Brainrot", cn: "脑腐专区" },
+        },
+        { id: "meme", icon: "🎭", label: { en: "Memes", cn: "梗文化" } },
+        {
+          id: "classic",
+          icon: "🌳",
+          label: { en: "Classics", cn: "经典常青" },
+        },
+        {
+          id: "life",
+          icon: "💘",
+          label: { en: "Love & Life", cn: "情感日常" },
+        },
+      ];
 
-<div class="modal-mask" id="mask">
-  <div class="modal" id="modal"></div>
-</div>
+      const HEAT_LABEL = {
+        hot: { cls: "hot", en: "🔥 Hot", cn: "🔥 爆火" },
+        rising: { cls: "rising", en: "📈 Rising", cn: "📈 上升" },
+        classic: { cls: "classic", en: "🌳 Classic", cn: "🌳 常青" },
+        brainrot: { cls: "brainrot", en: "🧠 Brainrot", cn: "🧠 脑腐" },
+      };
 
-<script>
-const WORDS = [
-  {
-    term: "habibi", emoji: "❤️", pron: "/həˈbiːbi/ 哈比比",
-    cat: "trending", heat: "hot", trend: "↑1,000%",
-    zh: "亲爱的、老铁（阿拉伯语借词）",
-    en: "Arabic for \"my darling / my buddy\". Recently exploded on the US internet as a friendly way to call someone your close pal — like bro or bestie, with extra warmth.",
-    example: "What's up habibi! Long time no see!",
-    tr: "咋样啊老铁！好久不见！",
-    origin: "源自阿拉伯语 حبيبي（我的爱人）。2026年因短视频热梗和体育圈主播带火，Google 搜索量一周暴涨 10 倍。"
-  },
-  {
-    term: "skibidi", emoji: "🚽", pron: "/ˈskɪbɪdi/ 斯基比迪",
-    cat: "brainrot", heat: "brainrot", trend: "Gen Alpha favorite",
-    zh: "无实际含义的「脑腐」咒语词",
-    en: "A nonsense word from the viral YouTube series \"Skibidi Toilet\". Used by Gen Alpha for anything absurd, cool, or just as pure brainrot filler. Often combined: \"skibidi rizz\".",
-    example: "Bro really said skibidi and ran away 💀",
-    tr: "兄弟喊了句 skibidi 就跑了，绷不住",
-    origin: "出自 2023 年爆火的 YouTube 动画《Skibidi Toilet》（马桶人大战监控人），成为 Alpha 世代（10后）的标志性暗号。"
-  },
-  {
-    term: "rizz", emoji: "😏", pron: "/rɪz/ 里兹",
-    cat: "trending", heat: "hot", trend: "Word of the Year 2023",
-    zh: "撩人技巧、个人魅力",
-    en: "Charisma, especially the skill of charming a romantic interest. Can be a noun (\"he's got rizz\") or a verb with \"up\" (\"he rizzed her up\").",
-    example: "Bro has unlimited rizz, how does he do it??",
-    tr: "这哥们魅力值拉满，他咋做到的？？",
-    origin: "由 Kai Cenat 等主播带火，是 charisma（魅力）中间部分的缩写。2023 年被牛津词典评为年度词汇。"
-  },
-  {
-    term: "gyatt", emoji: "😳", pron: "/ɡjæt/ 加特",
-    cat: "brainrot", heat: "brainrot", trend: "Twitch regular",
-    zh: "惊叹某人体型/身材爆炸",
-    en: "An exclamation (from \"god damn\") used when someone sees a person with a curvy figure. Extremely common on Twitch and TikTok live chats.",
-    example: "GYATT DAMN did you see that??",
-    tr: "我的天呐你看到没？？",
-    origin: "源自 streamer 对 \"god damn\" 的快速连读，被 YourRAGE 等主播推广，现已成脑腐词库核心成员。"
-  },
-  {
-    term: "sigma", emoji: "🐺", pron: "/ˈsɪɡmə/ 西格玛",
-    cat: "meme", heat: "rising", trend: "Sigma era continues",
-    zh: "独来独往的高冷强者",
-    en: "A lone-wolf alpha. Someone cool, independent, and successful who doesn't need social validation. Often ironic in \"sigma male grindset\" memes.",
-    example: "He's such a sigma, doesn't even text anyone back.",
-    tr: "他就是个 sigma，谁的微信都不回。",
-    origin: "在\"Alpha/Beta 男\"等级理论中硬造出的更高等级，经《American Psycho》Patrick Bateman 二创梗图封神。"
-  },
-  {
-    term: "delulu", emoji: "🌈", pron: "/dɪˈluːluː/ 德噜噜",
-    cat: "trending", heat: "rising", trend: "Stan-culture must",
-    zh: "自欺欺人式乐观，妄想粉丝",
-    en: "Short for \"delusional\". Being playfully unrealistic about your crush or dreams. \"Delulu is the solulu\" = being delusional is the solution.",
-    example: "I'm delulu but I truly think he likes me back.",
-    tr: "我知道我在做梦，但我真觉得他也喜欢我。",
-    origin: "来自 K-pop 粉丝圈对 delusional 的萌化缩写，2024 年破圈成为 TikTok 高频词。"
-  },
-  {
-    term: "fanum tax", emoji: "🍟", pron: "法纳姆税",
-    cat: "brainrot", heat: "hot", trend: "↕ Steady",
-    zh: "「好友抢食税」",
-    en: "When your friend steals your food. Named after streamer Fanum, who constantly took bites of Kai Cenat's food on stream.",
-    example: "Bro paid the fanum tax on my fries again 💀",
-    tr: "兄弟又对我的薯条征了抢食税",
-    origin: "出自 Kai Cenat 的 AMP 直播团成员 Fanum，2023 年随直播切片疯传，还衍生出洗脑神曲。"
-  },
-  {
-    term: "Ohio", emoji: "🌾", pron: "俄亥俄",
-    cat: "meme", heat: "classic", trend: "Evergreen",
-    zh: "离谱、诡异、不对劲的代名词",
-    en: "Used to describe anything weird, cursed, or absurd — as if only Ohio could produce it. \"Only in Ohio\" became a global meme format.",
-    example: "This school cafeteria is so Ohio 💀",
-    tr: "我们食堂太离谱了（太 Ohio 了）",
-    origin: "2022 年起 TikTok 上\"俄亥俄 = 怪事发生地\"的梗席卷全网，成为形容一切邪门事物的万能词。"
-  },
-  {
-    term: "aura", emoji: "✨", pron: "奥拉",
-    cat: "trending", heat: "hot", trend: "Aura-scoring trend",
-    zh: "气场分、魅力值",
-    en: "Imaginary coolness points. Doing something smooth earns aura; doing something embarrassing loses massive aura (-1000).",
-    example: "He tripped on stage. That's -1000 aura.",
-    tr: "他在台上摔了一跤，气场分扣一千。",
-    origin: "2024 年从篮球圈解说（评价球员气质）扩散成全网通用的\"魅力记分梗\"。"
-  },
-  {
-    term: "mewing", emoji: "🤐", pron: "缪英",
-    cat: "trending", heat: "rising", trend: "Looksmaxxing staple",
-    zh: "一种「闭嘴舌头贴上颚」的瘦脸法",
-    en: "A tongue-posture technique supposedly defining your jawline. Became a meme where you point at your jaw and can't talk because you're \"mewing\".",
-    example: "Shhh, can't talk. I'm mewing.",
-    tr: "嘘，别吵，我在 mewing 呢。",
-    origin: "以英国正畸医生 Mike Mew 命名，2023 年被 TikTok looksmaxxing 颜值圈发扬光大。"
-  },
-  {
-    term: "looksmaxxing", emoji: "💪", pron: "颜值最大化",
-    cat: "trending", heat: "rising", trend: "Heating up",
-    zh: "颜值极限提升运动",
-    en: "The practice of maximizing your looks — gym, skincare, haircut, even extreme methods. Sub-types include \"softmaxxing\" (natural) and \"hardmaxxing\" (intense).",
-    example: "Bro started looksmaxxing and disappeared for 6 months.",
-    tr: "兄弟开始颜值修炼，闭关六个月没见人。",
-    origin: "起源于颜值论坛，2024 年因 TikTok 的 \"Looksmaxxing\" 变装视频走向主流。"
-  },
-  {
-    term: "no cap", emoji: "🧢", pron: "不戴帽",
-    cat: "classic", heat: "classic", trend: "常青树",
-    zh: "不骗你、我说真的",
-    en: "No lie, for real. \"Cap\" means lie, so \"no cap\" swears you're telling the truth. Comes from hip-hop slang.",
-    example: "This is the best pizza in NY, no cap.",
-    tr: "这是纽约最好吃的披萨，不骗你。",
-    origin: "\"Cap\" 在黑人俚语里意为撒谎（源自 \"capping\"），说唱文化推广后成为全球通用口头禅。"
-  },
-  {
-    term: "fr fr", emoji: "💯", pron: "for real for real",
-    cat: "classic", heat: "classic", trend: "Typing staple",
-    zh: "真的真的、说正经的",
-    en: "\"For real, for real\" — emphasizing you mean it. Often used at the end of sentences for dramatic agreement.",
-    example: "This semester is killing me fr fr",
-    tr: "这学期真要了我的命，真的真的。",
-    origin: "短信时代的缩写文化产物，在 Twitter/X 和 Discord 上永不过时。"
-  },
-  {
-    term: "bussin", emoji: "🍔", pron: "巴辛",
-    cat: "classic", heat: "classic", trend: "Food-review pick",
-    zh: "好吃到爆",
-    en: "Extremely good, usually about food. From \"busting\" (as in flavor bursting out).",
-    example: "Grandma's cooking? Absolutely bussin.",
-    tr: "奶奶做的饭？那叫一个香到爆。",
-    origin: "出自非裔美式英语（AAVE），经 TikTok 美食博主测评视频普及。"
-  },
-  {
-    term: "cooked", emoji: "🍳", pron: "熟了",
-    cat: "classic", heat: "rising", trend: "Still expanding",
-    zh: "完蛋了、废了",
-    en: "Done for, exhausted, or doomed. If you're cooked, there's no saving you — like a piece of meat that's already done.",
-    example: "I have 3 finals tomorrow. I'm cooked.",
-    tr: "明天三门期末考，我熟透了。",
-    origin: "体育解说（\"the defense is cooked\"）+ 学生考试圈的推波助澜，2024-2026 持续霸榜。"
-  },
-  {
-    term: "mid", emoji: "😐", pron: "中等",
-    cat: "classic", heat: "classic", trend: "The ultimate meh",
-    zh: "平庸、就那样、不好不坏",
-    en: "Mediocre, underwhelming. The ultimate dismissive review — not bad enough to hate, not good enough to praise.",
-    example: "Everyone loves that movie but honestly it's mid.",
-    tr: "大家都吹那部电影，讲真也就一般。",
-    origin: "从 \"mid-tier\" 缩写而来，本是游戏圈用语，后成为全网万能差评。"
-  },
-  {
-    term: "glazing", emoji: "🍩", pron: "镀糖衣",
-    cat: "trending", heat: "hot", trend: "Comment-section hot",
-    zh: "无脑吹、舔狗式捧人",
-    en: "Excessively praising or flattering someone, like a donut drowning in glaze. The modern word for being a suck-up.",
-    example: "Stop glazing him, he scored one lucky goal.",
-    tr: "别舔了，他就进了一个运气球。",
-    origin: "2023 年从 Twitch 评论区爆发，打篮球/游戏区最常用来嘲讽过度吹捧。"
-  },
-  {
-    term: "huzz", emoji: "🫣", pron: "哈兹",
-    cat: "brainrot", heat: "rising", trend: "Gen Z favorite",
-    zh: "女生们（hoes 的萌化说法）",
-    en: "A playful, meme-y way to refer to girls, from \"hoes\". Male counterpart: \"bruzz\". Often used ironically.",
-    example: "The huzz are not gonna like this one.",
-    tr: "这一波妹子们可不乐意了。",
-    origin: "2024 年 Twitch/Kick 主播圈流行起来的谐音梗，属于典型的脑腐进化产物。"
-  },
-  {
-    term: "chill guy", emoji: "🐕", pron: "淡定狗",
-    cat: "meme", heat: "hot", trend: "↓ Cooling, still iconic",
-    zh: "佛系淡人、无所谓先生",
-    en: "From the \"my chill guy\" meme — a cartoon dog in a sweater who is \"just a chill guy\". Describes someone unbothered by anything.",
-    example: "I missed the deadline but I'm just a chill guy.",
-    tr: "虽然错过截止日期，但我是条淡定狗。",
-    origin: "插画师 Phillip Banks 的原创角色，2024 年底病毒式传播，成为\"摆烂但淡定\"的精神图腾。"
-  },
-  {
-    term: "very demure, very mindful", emoji: "🙏", pron: "端庄又清醒",
-    cat: "meme", heat: "classic", trend: "2024 Meme of the Year",
-    zh: "「很端庄、很走心」（反讽式谦虚）",
-    en: "From Jools Lebron's viral TikToks about being modest and respectful at work. Used ironically to describe anything done \"properly\".",
-    example: "I do my nails very demure, very mindful.",
-    tr: "我做美甲很端庄、很克制。",
-    origin: "2024 年 8 月由变装创作者 Jools Lebron 创造，一夜之间霸榜 TikTok。"
-  },
-  {
-    term: "slay", emoji: "💅", pron: "斯雷",
-    cat: "classic", heat: "classic", trend: "常青",
-    zh: "绝了、杀疯了",
-    en: "You did amazing, you ate that. Originally ballroom culture, now a universal compliment (mostly used by/for women).",
-    example: "You wore THAT to the party? Slay.",
-    tr: "你穿这身去派对？杀疯了。",
-    origin: "源自 1980s LGBTQ+ 舞厅文化，经 RuPaul 变装皇后秀传播至全网。"
-  },
-  {
-    term: "sus", emoji: "🤨", pron: "萨丝",
-    cat: "classic", heat: "classic", trend: "Gaming evergreen",
-    zh: "可疑的",
-    en: "Short for \"suspicious\". Popularized by the game Among Us where you vote out the sus crewmate.",
-    example: "Why were you near the body? Kinda sus.",
-    tr: "你为啥在尸体旁边？有点可疑。",
-    origin: "Among Us（太空狼人杀）2020 年翻红带火，如今仍是怀疑一切的万能词。"
-  },
-  {
-    term: "ratio", emoji: "📊", pron: "瑞修",
-    cat: "classic", heat: "classic", trend: "Twitter classic",
-    zh: "点赞碾压式打脸",
-    en: "When a reply gets more likes than the original post, proving the original was bad. Commenting \"ratio\" is challenging others to out-like the post.",
-    example: "Ratio + L + didn't ask",
-    tr: "点踩 + 你输了 + 没人问你",
-    origin: "Twitter/X 文化产物，一条回复的赞数超过原帖即宣告\"舆论处刑\"成功。"
-  },
-  {
-    term: "touch grass", emoji: "🌱", pron: "去摸草",
-    cat: "classic", heat: "classic", trend: "Go-outside classic",
-    zh: "出去走走吧、别在网上泡了",
-    en: "Go outside and reconnect with reality. Told to people who are extremely online, arguing about nonsense.",
-    example: "You made 50 comments about this? Touch grass.",
-    tr: "你为这事发了50条评论？去摸摸草吧。",
-    origin: "游戏圈劝架用语，讽刺重度网瘾者\"你已经很久没见过真实世界了\"。"
-  },
-  {
-    term: "brainrot", emoji: "🧠", pron: "脑腐",
-    cat: "brainrot", heat: "hot", trend: "Word of the Year 2024",
-    zh: "脑腐（网络烂梗吃多了）",
-    en: "Both the content that melts your brain AND the state of your brain after too much of it. Oxford's 2024 Word of the Year.",
-    example: "I can't stop saying skibidi. I have brainrot.",
-    tr: "我忍不住一直说 skibidi，脑子已经腐烂了。",
-    origin: "2024 年牛津年度词汇，专指 skibidi / gyatt / fanum tax 一类让大脑退化的病毒式内容。"
-  },
-  {
-    term: "lore", emoji: "📜", pron: "罗尔",
-    cat: "trending", heat: "rising", trend: "Backstory trend",
-    zh: "背景故事、黑历史设定",
-    en: "Someone's backstory or history, treated like video game lore. \"That's crazy lore\" = wild backstory revealed.",
-    example: "Wait, you dated HER ex? That's crazy lore.",
-    tr: "等等，你谈过她的前任？这瓜的信息量很大。",
-    origin: "游戏/影视圈\"世界观设定\"一词的挪用，TikTok 用户把个人往事也当剧情讲。"
-  },
-  {
-    term: "ate", emoji: "🍽️", pron: "吃干净了",
-    cat: "classic", heat: "classic", trend: "Compliment staple",
-    zh: "表现炸裂、碾压全场",
-    en: "She ate = she performed flawlessly. Usually followed by \"and left no crumbs\" (毫无破绽).",
-    example: "Her Met Gala look ate and left no crumbs.",
-    tr: "她的 Met Gala 造型赢麻了，一点破绽没有。",
-    origin: "出自 Ballroom 文化 \"ate that\"，与 slay 同源，现活跃于时尚、舞台评论区。"
-  },
-  {
-    term: "NPC", emoji: "🤖", pron: "恩皮西",
-    cat: "meme", heat: "classic", trend: "Philosophical",
-    zh: "工具人、没有主见的人",
-    en: "Non-player character. Someone who repeats scripted opinions, walks in herds, lacks independent thought — like a video game background character.",
-    example: "Bro just repeats TikTok takes, total NPC behavior.",
-    tr: "兄弟只会复读 TikTok 观点，纯纯 NPC 行为。",
-    origin: "游戏术语挪用，2022 年起用于嘲讽人云亦云的人，也衍生出 NPC 直播乱象。"
-  },
-  {
-    term: "ghosting", emoji: "👻", pron: "鬼隐",
-    cat: "life", heat: "classic", trend: "Dating-talk staple",
-    zh: "玩消失、已读不回人间蒸发",
-    en: "Suddenly cutting off all contact with someone without explanation — common in dating and even friendships.",
-    example: "We had 3 great dates, then he started ghosting me.",
-    tr: "我们约会三次很愉快，然后他开始人间蒸发。",
-    origin: "2010s 约会软件时代词汇，ghost 形象地描述\"人像幽灵一样消失\"。"
-  },
-  {
-    term: "situationship", emoji: "💞", pron: "西图诶逊ship",
-    cat: "life", heat: "classic", trend: "Dating-talk staple",
-    zh: "说不清道不明的暧昧关系",
-    en: "A romantic relationship without a definition — more than friends, less than partners, and nobody's asking for clarity.",
-    example: "We've been in a situationship for 2 years.",
-    tr: "我们已经暧昧了两年，谁也没捅破。",
-    origin: "Tinder 时代产物：relationship 前加 situation，精准命名\"关系不确定态\"。"
-  },
-  {
-    term: "yeet", emoji: "🚀", pron: "耶特",
-    cat: "meme", heat: "classic", trend: "Forever kinetic",
-    zh: "用力扔出去",
-    en: "To throw something with full force and zero regard. Also an exclamation of excitement while doing so.",
-    example: "He yeeted the phone into the lake.",
-    tr: "他一扬手把手机扔湖里了。",
-    origin: "2014 年 Vine 舞蹈视频诞生，因\"投掷的爽感\"成为永恒动词。"
-  },
-  {
-    term: "main character", emoji: "🎬", pron: "主角光环",
-    cat: "life", heat: "classic", trend: "Main-character vibe",
-    zh: "活出主角感",
-    en: "Living like you're the protagonist of your own movie — confidently, unapologetically, sometimes obnoxiously.",
-    example: "She danced in the rain like a main character.",
-    tr: "她在雨中起舞，主角光环拉满。",
-    origin: "TikTok 的 \"main character energy\" 浪潮，鼓励人人活出自己的剧本。"
-  },
-  {
-    term: "POV", emoji: "🎥", pron: "第一视角",
-    cat: "classic", heat: "classic", trend: "Short-video king",
-    en: "Point of view. On TikTok it labels a scenario from a specific angle — though half the time it's used incorrectly.",
-    example: "POV: you're the last one to get the meme",
-    tr: "第一视角：你是最后一个看懂这个梗的",
-    origin: "电影术语（主观镜头），被短视频格式化后成为叙事框架万能前缀。"
-  },
-  {
-    term: "based", emoji: "🗿", pron: "贝斯德",
-    cat: "classic", heat: "classic", trend: "Forum relic",
-    zh: "真实敢说、活该被赞",
-    en: "Unapologetically yourself, stating your opinion without caring what others think. High praise in comment sections.",
-    example: "He said pizza with pineapple is fine. Based.",
-    tr: "他敢说菠萝披萨没问题。有胆量，赞。",
-    origin: "说唱歌手 Lil B 把本带贬义的 \"basehead\" 反转为褒义，后成 Reddit 评论区最高敬意。"
-  },
-  {
-    term: "goated", emoji: "🐐", pron: "GOAT 化",
-    cat: "classic", heat: "classic", trend: "Sports-cast hot",
-    zh: "史上最佳级的",
-    en: "From GOAT (Greatest Of All Time). Describing anything legendary or peak performance.",
-    example: "That free sauce policy is goated.",
-    tr: "免费加酱这个政策简直是神来之笔。",
-    origin: "GOAT 本用于体育巨星（乔丹、梅西），衍生形容词后万物皆可 goated。"
-  },
-  {
-    term: "it's giving...", emoji: "🎭", pron: "这给人的感觉是…",
-    cat: "trending", heat: "rising", trend: "Vibe-check king",
-    zh: "「这很…」「一股…味儿」",
-    en: "A sentence frame for describing vibes: \"it's giving 2007\" = it feels like 2007. Born in ballroom culture, perfected by TikTok.",
-    example: "That outfit? It's giving elementary school art teacher.",
-    tr: "这身穿搭？一股小学美术老师味儿。",
-    origin: "Ballroom 语法（\"it's giving face\"）经黑人说唱与 TikTok 时尚区推广成为万能点评句。"
-  },
-  {
-    term: "lowkey / highkey", emoji: "🤫", pron: "楼key / 嗨key",
-    cat: "classic", heat: "classic", trend: "Degree-adverb duo",
-    zh: "低调地说 / 高调地说（暗戳戳 / 明晃晃）",
-    en: "Lowkey = slightly, secretly. Highkey = openly, extremely. Perfect for grading your enthusiasm.",
-    example: "I lowkey want to quit and become a farmer.",
-    tr: "我暗戳戳想辞职去当农民。",
-    origin: "音乐圈俚语（lowkey 指不张扬的 parties），后泛化为一对万能程度副词。"
-  },
-  {
-    term: "deadass", emoji: "🗿", pron: "呆达斯",
-    cat: "classic", heat: "classic", trend: "NYC specialty",
-    zh: "说真的、不骗你（纽约认证）",
-    en: "New York slang for \"seriously / for real\". Adding it to any sentence instantly adds NY accent energy.",
-    example: "Deadass the best bagel I've ever had.",
-    tr: "说真的，这是我吃过最好的贝果。",
-    origin: "纽约市土产俚语，从街头走向说唱歌词再到全网。"
-  },
-  {
-    term: "IYKYK", emoji: "🤝", pron: "if you know you know",
-    cat: "classic", heat: "classic", trend: "Insider code",
-    zh: "懂的都懂",
-    en: "\"If you know, you know.\" A wink at insider knowledge — no explanation needed for those in the circle.",
-    example: "That 3am diner run was special. IYKYK.",
-    tr: "凌晨三点那顿路边摊太绝了，懂的都懂。",
-    origin: "短信缩写时代遗产，自带圈层优越感的社交暗号。"
-  },
-  {
-    term: "canon event", emoji: "🕸️", pron: "正史事件",
-    cat: "meme", heat: "classic", trend: "Fate-meme trend",
-    zh: "人生必经的\"正史剧情\"",
-    en: "From Spider-Verse: an unavoidable, defining life event that shapes who you are. Often embarrassing or painful.",
-    example: "Getting friendzoned in high school is a canon event.",
-    tr: "高中被发好人卡是人生正史剧情。",
-    origin: "2023 年《蜘蛛侠：纵横宇宙》带火的概念，网友用来自嘲人生必经的丢脸时刻。"
-  }
-];
+      /* English versions of the origin stories (shown in EN mode) */
+      const ORIGIN_EN = {
+        habibi:
+          "From Arabic حبيبي (my darling). Exploded in 2026 thanks to a short-video meme and sports streamers — Google searches jumped 10x in a week.",
+        skibidi:
+          'From the viral 2023 YouTube series "Skibidi Toilet" (toilet men vs. camera heads). Became the signature catchphrase of Gen Alpha.',
+        rizz: "Popularized by streamer Kai Cenat — it's literally the middle of \"charisma\". Named Oxford's Word of the Year 2023.",
+        gyatt:
+          'A rapid slur of "god damn" popularized by streamers like YourRAGE; now a core entry in the brainrot vocabulary.',
+        sigma:
+          "A made-up rank above the alpha/beta male hierarchy, canonized by Patrick Bateman edits from American Psycho.",
+        delulu:
+          'A cute shortening of "delusional" from K-pop stan culture; broke into the TikTok mainstream in 2024.',
+        "fanum tax":
+          "Named after Fanum of Kai Cenat's AMP crew, who kept stealing bites on stream; went viral in 2023 with a catchy theme song.",
+        Ohio: 'A 2022 TikTok wave turned "Ohio = where weird stuff happens" into a universal word for anything cursed.',
+        aura: "Spread from 2024 basketball commentary about a player's presence into a universal coolness-points meme.",
+        mewing:
+          "Named after British orthodontist Mike Mew; blown up by TikTok's looksmaxxing scene in 2023.",
+        looksmaxxing:
+          "Born on appearance forums, went mainstream in 2024 through TikTok glow-up videos.",
+        "no cap":
+          '"Cap" means a lie (from "capping") in Black American slang; hip-hop carried it worldwide.',
+        "fr fr":
+          "A product of texting-era abbreviations; never goes out of style on Twitter/X and Discord.",
+        bussin:
+          "From African American Vernacular English (AAVE), popularized by TikTok food-review creators.",
+        cooked:
+          'Sports commentary ("the defense is cooked") plus exam-season students kept it charting from 2024 to 2026.',
+        mid: 'Short for "mid-tier", originally gaming slang; became the internet\'s go-to lukewarm review.',
+        glazing:
+          "Erupted from Twitch comments in 2023; basketball and gaming sections use it to mock over-the-top praise.",
+        huzz: "A 2024 Twitch/Kick streamer phonetic pun — a classic brainrot evolution.",
+        "chill guy":
+          "Illustrator Phillip Banks' original character went viral in late 2024 as the mascot of unbothered energy.",
+        "very demure, very mindful":
+          "Created in August 2024 by creator Jools Lebron; dominated TikTok overnight.",
+        slay: "From 1980s LGBTQ+ ballroom culture, carried to the mainstream by RuPaul's Drag Race.",
+        sus: "Revived by Among Us in 2020; still the universal word for suspicion.",
+        ratio:
+          "A Twitter/X invention: when a reply out-likes the original post, it's a public verdict.",
+        "touch grass":
+          "A gaming-community line teasing chronic netizens that they haven't seen the real world in a while.",
+        brainrot:
+          "Oxford's Word of the Year 2024 — viral content like skibidi / gyatt / fanum tax that melts your brain.",
+        lore: "Borrowed from game/film world-building; TikTok users now narrate personal history like plot reveals.",
+        ate: 'From ballroom culture\'s "ate that", sibling of slay; lives in fashion and performance comment sections.',
+        NPC: "A gaming term repurposed in 2022 to mock people who parrot others' opinions; later inspired NPC livestreams.",
+        ghosting:
+          'A dating-app-era word from the 2010s; "ghost" perfectly captures someone vanishing like a spirit.',
+        situationship:
+          'A Tinder-era coinage: "situation" + "relationship", precisely naming the undefined-relationship state.',
+        yeet: "Born in a 2014 Vine dance video; became an eternal verb for the joy of throwing.",
+        "main character":
+          'TikTok\'s "main character energy" wave encourages everyone to live their own script.',
+        POV: "A film term (subjective camera) turned into a universal framing prefix by short-video culture.",
+        based:
+          'Rapper Lil B flipped the pejorative "basehead" into praise; now Reddit\'s highest comment-section honor.',
+        goated:
+          "GOAT was for sports legends (Jordan, Messi); as an adjective, anything can be goated.",
+        "it's giving...":
+          'Ballroom grammar ("it\'s giving face") promoted by Black rap and TikTok fashion into a universal review frame.',
+        "lowkey / highkey":
+          "Music-scene slang (lowkey once meant low-profile parties), now a universal pair of degree adverbs.",
+        deadass:
+          "Native NYC street slang that traveled through rap lyrics to the whole internet.",
+        IYKYK: "A texting-era relic with built-in insider superiority.",
+        "canon event":
+          "The 2023 film Spider-Man: Across the Spider-Verse made it a meme for life's unavoidable embarrassing rites.",
+      };
 
-const CATS = [
-  { id: "all", icon: "🗂️", label: { en: "All", cn: "全部" } },
-  { id: "trending", icon: "🔥", label: { en: "Trending", cn: "当红热词" } },
-  { id: "brainrot", icon: "🧠", label: { en: "Brainrot", cn: "脑腐专区" } },
-  { id: "meme", icon: "🎭", label: { en: "Memes", cn: "梗文化" } },
-  { id: "classic", icon: "🌳", label: { en: "Classics", cn: "经典常青" } },
-  { id: "life", icon: "💘", label: { en: "Love & Life", cn: "情感日常" } }
-];
+      /* UI strings per language */
+      const STR = {
+        en: {
+          title: "🔥 Slang<span>Snap</span>",
+          sub: "The fun dictionary of US internet slang — know exactly what they're saying online",
+          stats: [
+            "📚 {n} slang words",
+            "🇺🇸 Straight from the US internet",
+            "🀄 Bilingual explanations",
+          ],
+          placeholder: "Search slang, e.g. rizz / habibi / skibidi...",
+          random: "🎲 Random",
+          randomTitle: "Surprise me",
+          search: "Search",
+          footer:
+            "New slang added regularly · For fun & learning only · Made with ❤️ by g-uno",
+          empty:
+            '😕 No slang found for "{q}"<br><br>Try rizz, skibidi, or habibi?',
+          secZh: "🀄 Chinese Meaning",
+          secEn: "📖 What it means",
+          secEx: "💬 Example",
+          secOrigin: "🧬 Origin & Background",
+          toggle: "中文",
+          htmlLang: "en",
+          docTitle: "SlangSnap · US Internet Slang Dictionary",
+        },
+        cn: {
+          title: "🔥 热词速查 <span>SlangSnap</span>",
+          sub: "美国网络热词趣味词典 · 看懂老外到底在说什么",
+          stats: [
+            "📚 共 {n} 个热词",
+            "🇺🇸 实时同步美国互联网",
+            "🀄 中英双语解释",
+          ],
+          placeholder: "搜索热词，如：rizz / habibi / skibidi...",
+          random: "🎲 随机",
+          randomTitle: "随机来一个",
+          search: "搜索",
+          footer: "热词持续收录中 · 仅供娱乐学习 · Made with ❤️ by g-uno",
+          empty: "😕 没找到「{q}」相关热词<br><br>试试 rizz、skibidi、habibi？",
+          secZh: "🀄 中文意思",
+          secEn: "📖 英文释义",
+          secEx: "💬 例句",
+          secOrigin: "🧬 词源与背景",
+          toggle: "English",
+          htmlLang: "zh-CN",
+          docTitle: "热词速查 · US Internet Slang 词典",
+        },
+      };
 
-const HEAT_LABEL = {
-  hot: { cls: "hot", en: "🔥 Hot", cn: "🔥 爆火" },
-  rising: { cls: "rising", en: "📈 Rising", cn: "📈 上升" },
-  classic: { cls: "classic", en: "🌳 Classic", cn: "🌳 常青" },
-  brainrot: { cls: "brainrot", en: "🧠 Brainrot", cn: "🧠 脑腐" }
-};
+      /* Safe storage: works even in sandboxed iframes where localStorage throws */
+      const store = {
+        get(k) {
+          try {
+            return window.localStorage.getItem(k);
+          } catch (e) {
+            return null;
+          }
+        },
+        set(k, v) {
+          try {
+            window.localStorage.setItem(k, v);
+          } catch (e) {}
+        },
+      };
 
-/* English versions of the origin stories (shown in EN mode) */
-const ORIGIN_EN = {
-  "habibi": "From Arabic حبيبي (my darling). Exploded in 2026 thanks to a short-video meme and sports streamers — Google searches jumped 10x in a week.",
-  "skibidi": "From the viral 2023 YouTube series \"Skibidi Toilet\" (toilet men vs. camera heads). Became the signature catchphrase of Gen Alpha.",
-  "rizz": "Popularized by streamer Kai Cenat — it's literally the middle of \"charisma\". Named Oxford's Word of the Year 2023.",
-  "gyatt": "A rapid slur of \"god damn\" popularized by streamers like YourRAGE; now a core entry in the brainrot vocabulary.",
-  "sigma": "A made-up rank above the alpha/beta male hierarchy, canonized by Patrick Bateman edits from American Psycho.",
-  "delulu": "A cute shortening of \"delusional\" from K-pop stan culture; broke into the TikTok mainstream in 2024.",
-  "fanum tax": "Named after Fanum of Kai Cenat's AMP crew, who kept stealing bites on stream; went viral in 2023 with a catchy theme song.",
-  "Ohio": "A 2022 TikTok wave turned \"Ohio = where weird stuff happens\" into a universal word for anything cursed.",
-  "aura": "Spread from 2024 basketball commentary about a player's presence into a universal coolness-points meme.",
-  "mewing": "Named after British orthodontist Mike Mew; blown up by TikTok's looksmaxxing scene in 2023.",
-  "looksmaxxing": "Born on appearance forums, went mainstream in 2024 through TikTok glow-up videos.",
-  "no cap": "\"Cap\" means a lie (from \"capping\") in Black American slang; hip-hop carried it worldwide.",
-  "fr fr": "A product of texting-era abbreviations; never goes out of style on Twitter/X and Discord.",
-  "bussin": "From African American Vernacular English (AAVE), popularized by TikTok food-review creators.",
-  "cooked": "Sports commentary (\"the defense is cooked\") plus exam-season students kept it charting from 2024 to 2026.",
-  "mid": "Short for \"mid-tier\", originally gaming slang; became the internet's go-to lukewarm review.",
-  "glazing": "Erupted from Twitch comments in 2023; basketball and gaming sections use it to mock over-the-top praise.",
-  "huzz": "A 2024 Twitch/Kick streamer phonetic pun — a classic brainrot evolution.",
-  "chill guy": "Illustrator Phillip Banks' original character went viral in late 2024 as the mascot of unbothered energy.",
-  "very demure, very mindful": "Created in August 2024 by creator Jools Lebron; dominated TikTok overnight.",
-  "slay": "From 1980s LGBTQ+ ballroom culture, carried to the mainstream by RuPaul's Drag Race.",
-  "sus": "Revived by Among Us in 2020; still the universal word for suspicion.",
-  "ratio": "A Twitter/X invention: when a reply out-likes the original post, it's a public verdict.",
-  "touch grass": "A gaming-community line teasing chronic netizens that they haven't seen the real world in a while.",
-  "brainrot": "Oxford's Word of the Year 2024 — viral content like skibidi / gyatt / fanum tax that melts your brain.",
-  "lore": "Borrowed from game/film world-building; TikTok users now narrate personal history like plot reveals.",
-  "ate": "From ballroom culture's \"ate that\", sibling of slay; lives in fashion and performance comment sections.",
-  "NPC": "A gaming term repurposed in 2022 to mock people who parrot others' opinions; later inspired NPC livestreams.",
-  "ghosting": "A dating-app-era word from the 2010s; \"ghost\" perfectly captures someone vanishing like a spirit.",
-  "situationship": "A Tinder-era coinage: \"situation\" + \"relationship\", precisely naming the undefined-relationship state.",
-  "yeet": "Born in a 2014 Vine dance video; became an eternal verb for the joy of throwing.",
-  "main character": "TikTok's \"main character energy\" wave encourages everyone to live their own script.",
-  "POV": "A film term (subjective camera) turned into a universal framing prefix by short-video culture.",
-  "based": "Rapper Lil B flipped the pejorative \"basehead\" into praise; now Reddit's highest comment-section honor.",
-  "goated": "GOAT was for sports legends (Jordan, Messi); as an adjective, anything can be goated.",
-  "it's giving...": "Ballroom grammar (\"it's giving face\") promoted by Black rap and TikTok fashion into a universal review frame.",
-  "lowkey / highkey": "Music-scene slang (lowkey once meant low-profile parties), now a universal pair of degree adverbs.",
-  "deadass": "Native NYC street slang that traveled through rap lyrics to the whole internet.",
-  "IYKYK": "A texting-era relic with built-in insider superiority.",
-  "canon event": "The 2023 film Spider-Man: Across the Spider-Verse made it a meme for life's unavoidable embarrassing rites."
-};
+      let lang = store.get("slangsnap-lang") || "en";
+      const T = () => STR[lang];
 
-/* UI strings per language */
-const STR = {
-  en: {
-    title: "🔥 Slang<span>Snap</span>",
-    sub: "The fun dictionary of US internet slang — know exactly what they're saying online",
-    stats: ["📚 {n} slang words", "🇺🇸 Straight from the US internet", "🀄 Bilingual explanations"],
-    placeholder: "Search slang, e.g. rizz / habibi / skibidi...",
-    random: "🎲 Random", randomTitle: "Surprise me", search: "Search",
-    footer: "New slang added regularly · For fun & learning only · Made with ❤️ by g-uno",
-    empty: "😕 No slang found for \"{q}\"<br><br>Try rizz, skibidi, or habibi?",
-    secZh: "🀄 Chinese Meaning", secEn: "📖 What it means",
-    secEx: "💬 Example", secOrigin: "🧬 Origin & Background",
-    toggle: "中文", htmlLang: "en",
-    docTitle: "SlangSnap · US Internet Slang Dictionary"
-  },
-  cn: {
-    title: "🔥 热词速查 <span>SlangSnap</span>",
-    sub: "美国网络热词趣味词典 · 看懂老外到底在说什么",
-    stats: ["📚 共 {n} 个热词", "🇺🇸 实时同步美国互联网", "🀄 中英双语解释"],
-    placeholder: "搜索热词，如：rizz / habibi / skibidi...",
-    random: "🎲 随机", randomTitle: "随机来一个", search: "搜索",
-    footer: "热词持续收录中 · 仅供娱乐学习 · Made with ❤️ by g-uno",
-    empty: "😕 没找到「{q}」相关热词<br><br>试试 rizz、skibidi、habibi？",
-    secZh: "🀄 中文意思", secEn: "📖 英文释义",
-    secEx: "💬 例句", secOrigin: "🧬 词源与背景",
-    toggle: "English", htmlLang: "zh-CN",
-    docTitle: "热词速查 · US Internet Slang 词典"
-  }
-};
+      let activeCat = "all";
+      let query = "";
 
-/* Safe storage: works even in sandboxed iframes where localStorage throws */
-const store = {
-  get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
-};
+      const grid = document.getElementById("grid");
+      const mask = document.getElementById("mask");
+      const modal = document.getElementById("modal");
+      const catBar = document.getElementById("catBar");
+      const searchInput = document.getElementById("searchInput");
 
-let lang = store.get("slangsnap-lang") || "en";
-const T = () => STR[lang];
+      function renderCats() {
+        catBar.innerHTML = "";
+        CATS.forEach((c) => {
+          const b = document.createElement("button");
+          b.className = "cat-btn" + (c.id === activeCat ? " active" : "");
+          b.textContent = `${c.icon} ${c.label[lang]}`;
+          b.onclick = () => {
+            activeCat = c.id;
+            document
+              .querySelectorAll(".cat-btn")
+              .forEach((x) => x.classList.remove("active"));
+            b.classList.add("active");
+            render();
+          };
+          catBar.appendChild(b);
+        });
+      }
 
-let activeCat = "all";
-let query = "";
+      function applyLang() {
+        const t = T();
+        document.documentElement.lang = t.htmlLang;
+        document.title = t.docTitle;
+        document.getElementById("siteTitle").innerHTML = t.title;
+        document.getElementById("siteSub").textContent = t.sub;
+        document.getElementById("statsBar").innerHTML = t.stats
+          .map(
+            (s) =>
+              `<span class="stat-chip">${s.replace("{n}", WORDS.length)}</span>`,
+          )
+          .join("");
+        searchInput.placeholder = t.placeholder;
+        const rand = document.getElementById("randomBtn");
+        rand.textContent = t.random;
+        rand.title = t.randomTitle;
+        document.getElementById("searchBtn").textContent = t.search;
+        document.getElementById("footerBar").textContent = t.footer;
+        document.getElementById("langToggle").textContent = t.toggle;
+        renderCats();
+        render();
+      }
 
-const grid = document.getElementById("grid");
-const mask = document.getElementById("mask");
-const modal = document.getElementById("modal");
-const catBar = document.getElementById("catBar");
-const searchInput = document.getElementById("searchInput");
+      function filtered() {
+        return WORDS.filter((w) => {
+          const catOk = activeCat === "all" || w.cat === activeCat;
+          const q = query.trim().toLowerCase();
+          const qOk =
+            !q ||
+            w.term.toLowerCase().includes(q) ||
+            w.zh.includes(q) ||
+            w.en.toLowerCase().includes(q);
+          return catOk && qOk;
+        });
+      }
 
-function renderCats() {
-  catBar.innerHTML = "";
-  CATS.forEach(c => {
-    const b = document.createElement("button");
-    b.className = "cat-btn" + (c.id === activeCat ? " active" : "");
-    b.textContent = `${c.icon} ${c.label[lang]}`;
-    b.onclick = () => {
-      activeCat = c.id;
-      document.querySelectorAll(".cat-btn").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-      render();
-    };
-    catBar.appendChild(b);
-  });
-}
-
-function applyLang() {
-  const t = T();
-  document.documentElement.lang = t.htmlLang;
-  document.title = t.docTitle;
-  document.getElementById("siteTitle").innerHTML = t.title;
-  document.getElementById("siteSub").textContent = t.sub;
-  document.getElementById("statsBar").innerHTML = t.stats
-    .map(s => `<span class="stat-chip">${s.replace("{n}", WORDS.length)}</span>`).join("");
-  searchInput.placeholder = t.placeholder;
-  const rand = document.getElementById("randomBtn");
-  rand.textContent = t.random;
-  rand.title = t.randomTitle;
-  document.getElementById("searchBtn").textContent = t.search;
-  document.getElementById("footerBar").textContent = t.footer;
-  document.getElementById("langToggle").textContent = t.toggle;
-  renderCats();
-  render();
-}
-
-function filtered() {
-  return WORDS.filter(w => {
-    const catOk = activeCat === "all" || w.cat === activeCat;
-    const q = query.trim().toLowerCase();
-    const qOk = !q || w.term.toLowerCase().includes(q) || w.zh.includes(q) || w.en.toLowerCase().includes(q);
-    return catOk && qOk;
-  });
-}
-
-function render() {
-  const t = T();
-  const list = filtered();
-  if (!list.length) {
-    grid.innerHTML = `<div class="empty">${t.empty.replace("{q}", query)}</div>`;
-    return;
-  }
-  grid.innerHTML = list.map((w, i) => {
-    const h = HEAT_LABEL[w.heat];
-    const catName = ((CATS.find(c => c.id === w.cat) || {}).label || {})[lang] || "";
-    const meaningLine = lang === "cn"
-      ? `<div class="zh">${w.zh}</div><div class="en">${w.en}</div>`
-      : `<div class="en">${w.en}</div>`;
-    return `
+      function render() {
+        const t = T();
+        const list = filtered();
+        if (!list.length) {
+          grid.innerHTML = `<div class="empty">${t.empty.replace("{q}", query)}</div>`;
+          return;
+        }
+        grid.innerHTML = list
+          .map((w, i) => {
+            const h = HEAT_LABEL[w.heat];
+            const catName =
+              ((CATS.find((c) => c.id === w.cat) || {}).label || {})[lang] ||
+              "";
+            const meaningLine =
+              lang === "cn"
+                ? `<div class="zh">${w.zh}</div><div class="en">${w.en}</div>`
+                : `<div class="en">${w.en}</div>`;
+            return `
     <div class="card" onclick="openModal(${WORDS.indexOf(w)})">
       <div class="emoji">${w.emoji}</div>
       <h3>${w.term}
@@ -867,18 +1237,24 @@ function render() {
       ${meaningLine}
       <span class="cat-tag">${catName}</span>
     </div>`;
-  }).join("");
-}
+          })
+          .join("");
+      }
 
-function openModal(idx) {
-  const w = WORDS[idx];
-  const h = HEAT_LABEL[w.heat];
-  const t = T();
-  const catName = ((CATS.find(c => c.id === w.cat) || {}).label || {})[lang] || "";
-  const zhSection = lang === "cn" ? `<div class="section"><h4>${t.secZh}</h4><p><strong>${w.zh}</strong></p></div>` : "";
-  const trLine = lang === "cn" ? `<span class="tr">${w.tr}</span>` : "";
-  const originText = lang === "cn" ? w.origin : (ORIGIN_EN[w.term] || w.origin);
-  modal.innerHTML = `
+      function openModal(idx) {
+        const w = WORDS[idx];
+        const h = HEAT_LABEL[w.heat];
+        const t = T();
+        const catName =
+          ((CATS.find((c) => c.id === w.cat) || {}).label || {})[lang] || "";
+        const zhSection =
+          lang === "cn"
+            ? `<div class="section"><h4>${t.secZh}</h4><p><strong>${w.zh}</strong></p></div>`
+            : "";
+        const trLine = lang === "cn" ? `<span class="tr">${w.tr}</span>` : "";
+        const originText =
+          lang === "cn" ? w.origin : ORIGIN_EN[w.term] || w.origin;
+        modal.innerHTML = `
     <button class="close" onclick="closeModal()">✕</button>
     <div class="m-emoji">${w.emoji}</div>
     <h2>${w.term}</h2>
@@ -894,31 +1270,46 @@ function openModal(idx) {
     </div>
     <div class="section"><h4>${t.secOrigin}</h4><div class="origin">${originText}</div></div>
   `;
-  mask.classList.add("open");
-}
+        mask.classList.add("open");
+      }
 
-function closeModal() { mask.classList.remove("open"); }
-mask.onclick = e => { if (e.target === mask) closeModal(); };
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+      function closeModal() {
+        mask.classList.remove("open");
+      }
+      mask.onclick = (e) => {
+        if (e.target === mask) closeModal();
+      };
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
 
-searchInput.addEventListener("input", e => { query = e.target.value; render(); });
-searchInput.addEventListener("keydown", e => { if (e.key === "Enter") render(); });
-document.getElementById("searchBtn").onclick = () => { render(); };
+      searchInput.addEventListener("input", (e) => {
+        query = e.target.value;
+        render();
+      });
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") render();
+      });
+      document.getElementById("searchBtn").onclick = () => {
+        render();
+      };
 
-document.getElementById("randomBtn").onclick = () => {
-  const list = filtered();
-  const w = list.length ? list[Math.floor(Math.random() * list.length)] : WORDS[Math.floor(Math.random() * WORDS.length)];
-  openModal(WORDS.indexOf(w));
-};
+      document.getElementById("randomBtn").onclick = () => {
+        const list = filtered();
+        const w = list.length
+          ? list[Math.floor(Math.random() * list.length)]
+          : WORDS[Math.floor(Math.random() * WORDS.length)];
+        openModal(WORDS.indexOf(w));
+      };
 
-document.getElementById("langToggle").onclick = () => {
-  lang = lang === "en" ? "cn" : "en";
-  store.set("slangsnap-lang", lang);
-  closeModal();
-  applyLang();
-};
+      document.getElementById("langToggle").onclick = () => {
+        lang = lang === "en" ? "cn" : "en";
+        store.set("slangsnap-lang", lang);
+        closeModal();
+        applyLang();
+      };
 
-applyLang();
-</script>
-</body>
+      applyLang();
+    </script>
+  </body>
 </html>
